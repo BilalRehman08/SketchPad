@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_painter/flutter_painter.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'dart:ui' as ui;
 
@@ -69,7 +73,7 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
     "https://i.imgur.com/1PRzwBf.png",
     "https://i.imgur.com/VeeMfBS.png",
   ];
-
+  final ImagePicker _picker = ImagePicker();
   @override
   void initState() {
     super.initState();
@@ -109,6 +113,8 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
       controller.background = image.backgroundDrawable;
     });
   }
+
+  File? pickedImage;
 
   /// Updates UI when the focus changes
   void onFocus() {
@@ -173,19 +179,21 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
         ),
         body: Stack(
           children: [
-            if (backgroundImage != null)
-              // Enforces constraints
-              Positioned.fill(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio:
-                        backgroundImage!.width / backgroundImage!.height,
-                    child: FlutterPainter(
-                      controller: controller,
-                    ),
-                  ),
-                ),
-              ),
+            pickedImage != null
+                ? Image(image: FileImage(pickedImage!))
+                : Image(image: AssetImage('assets/white_bg.jpeg')),
+            // Enforces constraints
+            //   Positioned.fill(
+            //     child: Center(
+            //       child: AspectRatio(
+            //         aspectRatio:
+            //             backgroundImage!.width / backgroundImage!.height,
+            //         child: FlutterPainter(
+            //           controller: controller,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
             Positioned(
               bottom: 0,
               right: 0,
@@ -381,6 +389,13 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
                 ),
               ),
             ),
+            ElevatedButton(
+                onPressed: () async {
+                  final XFile? image =
+                      await _picker.pickImage(source: ImageSource.gallery);
+                  pickedImage = File(image!.path);
+                },
+                child: Text("FILE PICKER")),
           ],
         ),
         bottomNavigationBar: ValueListenableBuilder(
