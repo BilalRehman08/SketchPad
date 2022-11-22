@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_painter/flutter_painter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 import 'dart:ui' as ui;
 
@@ -21,7 +21,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "Flutter Painter Example",
       theme: ThemeData(
-          primaryColor: Colors.brown, accentColor: Colors.amberAccent),
+          primaryColor: Colors.brown,
+          colorScheme:
+              ColorScheme.fromSwatch().copyWith(secondary: Colors.amberAccent)),
       home: const FlutterPainterExample(),
     );
   }
@@ -31,6 +33,7 @@ class FlutterPainterExample extends StatefulWidget {
   const FlutterPainterExample({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _FlutterPainterExampleState createState() => _FlutterPainterExampleState();
 }
 
@@ -39,6 +42,8 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
   FocusNode textFocusNode = FocusNode();
   late PainterController controller;
   ui.Image? backgroundImage;
+  final ImagePicker _picker = ImagePicker();
+  File? pickedImage;
   Paint shapePaint = Paint()
     ..strokeWidth = 5
     ..color = Colors.red
@@ -73,7 +78,7 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
     "https://i.imgur.com/1PRzwBf.png",
     "https://i.imgur.com/VeeMfBS.png",
   ];
-  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
     super.initState();
@@ -102,6 +107,23 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
     initBackground();
   }
 
+  addImage() async {
+    final imageObject = await _picker.pickImage(source: ImageSource.gallery);
+    final Uint8List imagebytes = await imageObject!.readAsBytes();
+    final hello = Image(image: MemoryImage(imagebytes)).image;
+    final imagee = await hello.image;
+
+    setState(() {
+      controller.clearDrawables();
+      backgroundImage = imagee;
+      controller.background = imagee.backgroundDrawable;
+    });
+
+    // setState(() {
+    //   pickedImage = File(image!.path);
+    // });
+  }
+
   /// Fetches image from an [ImageProvider] (in this example, [NetworkImage])
   /// to use it as a background
   void initBackground() async {
@@ -113,8 +135,6 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
       controller.background = image.backgroundDrawable;
     });
   }
-
-  File? pickedImage;
 
   /// Updates UI when the focus changes
   void onFocus() {
@@ -135,23 +155,23 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
                   actions: [
                     // Delete the selected drawable
                     IconButton(
-                      icon: const Icon(
-                        PhosphorIcons.trash,
-                      ),
-                      onPressed: controller.selectedObjectDrawable == null
-                          ? null
-                          : removeSelectedDrawable,
-                    ),
-                    // Delete the selected drawable
+                        icon: const Icon(
+                          Icons.add,
+                        ),
+                        onPressed: () async {
+                          addImage();
+                        }),
                     IconButton(
-                      icon: const Icon(
-                        Icons.flip,
-                      ),
-                      onPressed: controller.selectedObjectDrawable != null &&
-                              controller.selectedObjectDrawable is ImageDrawable
-                          ? flipSelectedImageDrawable
-                          : null,
-                    ),
+                        icon: const Icon(
+                          PhosphorIcons.trash,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            pickedImage = null;
+                          });
+                        }),
+                    // Delete the selected drawable
+
                     // Redo action
                     IconButton(
                       icon: const Icon(
@@ -172,28 +192,38 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
         ),
         // Generate image
         floatingActionButton: FloatingActionButton(
+          onPressed: renderAndDisplayImage,
           child: const Icon(
             PhosphorIcons.imageFill,
           ),
-          onPressed: renderAndDisplayImage,
         ),
         body: Stack(
           children: [
-            pickedImage != null
-                ? Image(image: FileImage(pickedImage!))
-                : Image(image: AssetImage('assets/white_bg.jpeg')),
-            // Enforces constraints
-            //   Positioned.fill(
-            //     child: Center(
-            //       child: AspectRatio(
-            //         aspectRatio:
-            //             backgroundImage!.width / backgroundImage!.height,
-            //         child: FlutterPainter(
-            //           controller: controller,
-            //         ),
-            //       ),
-            //     ),
-            //   ),
+            // ElevatedButton(
+            //     onPressed: () async {
+            //       final XFile? image =
+            //           await _picker.pickImage(source: ImageSource.gallery);
+            //       pickedImage = File(image!.path);
+            //     },
+            //     child: Text("FILE PICKER")),
+            // Container(
+            //   child: pickedImage != null
+            //       ? Image(image: FileImage(pickedImage!))
+            //       : Image(image: AssetImage('assets/white_bg.jpeg')),
+            // ),
+            if (backgroundImage != null)
+              // Enforces constraints
+              Positioned.fill(
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio:
+                        backgroundImage!.width / backgroundImage!.height,
+                    child: FlutterPainter(
+                      controller: controller,
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               bottom: 0,
               right: 0,
@@ -389,13 +419,6 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
                 ),
               ),
             ),
-            ElevatedButton(
-                onPressed: () async {
-                  final XFile? image =
-                      await _picker.pickImage(source: ImageSource.gallery);
-                  pickedImage = File(image!.path);
-                },
-                child: Text("FILE PICKER")),
           ],
         ),
         bottomNavigationBar: ValueListenableBuilder(
