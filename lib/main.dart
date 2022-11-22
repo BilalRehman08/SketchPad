@@ -148,9 +148,10 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
           // Listen to the controller and update the UI when it updates.
           child: ValueListenableBuilder<PainterControllerValue>(
               valueListenable: controller,
-              child: const Text("Flutter Painter Example"),
+              child: const Text("SketchPad"),
               builder: (context, _, child) {
                 return AppBar(
+                  backgroundColor: Colors.purple,
                   title: child,
                   actions: [
                     // Delete the selected drawable
@@ -165,9 +166,16 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
                         icon: const Icon(
                           PhosphorIcons.trash,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          backgroundImage = null;
+                          controller.clearDrawables();
+                          final image =
+                              await const AssetImage('assets/white_bg.jpeg')
+                                  .image;
+
                           setState(() {
-                            pickedImage = null;
+                            backgroundImage = image;
+                            controller.background = image.backgroundDrawable;
                           });
                         }),
                     // Delete the selected drawable
@@ -192,6 +200,7 @@ class _FlutterPainterExampleState extends State<FlutterPainterExample> {
         ),
         // Generate image
         floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.purple,
           onPressed: renderAndDisplayImage,
           child: const Icon(
             PhosphorIcons.imageFill,
